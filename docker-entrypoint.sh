@@ -37,31 +37,33 @@ if test ! -d $SLAPD_CONFIG_DIR ; then
     mkdir $SLAPD_CONFIG_DIR
 fi
 
-# ----------------------------------------
-# initial entries
-# ----------------------------------------
-LDIF=/tmp/init.ldif
-cat << EOT > $LDIF
+if test ! -f $SLAPD_CONFIG_DIR/cn\=config.ldif ; then
+
+    # ----------------------------------------
+    # initial entries
+    # ----------------------------------------
+    LDIF=/tmp/init.ldif
+    cat << EOT > $LDIF
 dn: cn=config
 objectClass: olcGlobal
 cn: config
 EOT
-
-# ----------------------------------------
-# ldaps support
-# ----------------------------------------
-if test x$SLAPD_LDAPS = xyes ; then
-    cat << EOT >> $LDIF
+    
+    # ----------------------------------------
+    # ldaps support
+    # ----------------------------------------
+    if test x$SLAPD_LDAPS = xyes ; then
+	cat << EOT >> $LDIF
 olcTLSCACertificateFile: $SLAPD_CERTIFICATE_CA
 olcTLSCertificateFile: $SLAPD_CERTIFICATE
 olcTLSCertificateKeyFIle: $SLAPD_CERTIFICATE_KEY
 EOT
-fi
-
-# ----------------------------------------
-# create config entries
-# ----------------------------------------
-cat << EOT >> $LDIF
+    fi
+    
+    # ----------------------------------------
+    # create config entries
+    # ----------------------------------------
+    cat << EOT >> $LDIF
 
 dn: olcDatabase={0}config,cn=config
 objectClass: olcDatabaseConfig
@@ -95,24 +97,24 @@ olcRootPW: `slappasswd -s $DB_ADMIN_PASS`
 olcDbDirectory: $DB_DIR
 EOT
 
-if test $DEBUG -eq 1 ; then
-    cat $LDIF
+    if test $DEBUG -eq 1 ; then
+	cat $LDIF
+    fi
+
+    # ----------------------------------------
+    # register initial ldif file
+    # ----------------------------------------
+    /usr/sbin/slapadd -n0 -F $SLAPD_CONFIG_DIR -l $LDIF
+    rm -f $LDIF
+    
+    # ----------------------------------------
+    # set default schema
+    # ----------------------------------------
+    schemas="corba core cosine duaconf dyngroup inetorgperson java misc nis openldap ppolicy collective"
+    for schema in $schemas ; do
+	slapadd -n0 -F $SLAPD_CONFIG_DIR -l $SLAPD_SCHEMA_DIR/$schema.ldif
+    done
 fi
-
-# ----------------------------------------
-# register initial ldif file
-# ----------------------------------------
-rm -rf $SLAPD_CONFIG_DIR/*
-/usr/sbin/slapadd -n0 -F $SLAPD_CONFIG_DIR -l $LDIF
-rm -f $LDIF
-
-# ----------------------------------------
-# set default schema
-# ----------------------------------------
-schemas="corba core cosine duaconf dyngroup inetorgperson java misc nis openldap ppolicy collective"
-for schema in $schemas ; do
-    slapadd -n0 -F $SLAPD_CONFIG_DIR -l $SLAPD_SCHEMA_DIR/$schema.ldif
-done
 
 # ----------------------------------------
 # change owner before starting

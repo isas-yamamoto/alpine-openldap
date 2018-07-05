@@ -18,6 +18,8 @@ ENV DB_ADMIN_PASS "db_password"
 ENV DB_DIR "/var/lib/openldap/openldap-data"
 ENV LOG_LEVEL "stats"
 ENV DEBUG 0
+ENV UID "ldap"
+ENV GID "ldap"
 
 
 RUN set -ex \
